@@ -134,129 +134,71 @@ After obtaining millions of short reads, we need to align them to a (sometimes l
 
 **NOTE:** Aligners based on the burrows-wheeler transform makes some assumptions to speed up the alignment process. Namely, they require the reference genome to be very similar to your sequenced DNA (less than 2-5% differences). Moreover, they are not optimal, and therefore sometimes make some mistakes.
 
+**TASK** The first step of a burrows-wheeler aligner is to make an index from the fasta of the reference genome. open a terminal window, go to the folder resequencing and type 'bwa index NC_000913.3_MG1655.fasta'. Now, we can do the alignment against the created database. Type 'bwa mem NC_000913.3_MG1655.fasta SRR1030347_1.fastq.interval.fq SRR1030347_2.fastq.interval.fq > SRR1030347.alignment.sam'. Open the sam file with a text editor, and/or type in the terminal window 'head SRR1030347.alignment.sam'. Press green when finished.
 
+To store millions of alignments, researchers also had to develop new, more practical formats. The [Sequence Alignment/Map (SAM) format](https://samtools.github.io/hts-specs/SAMv1.pdf) is a tabular text file format, where each line contains information for one alignment.
+ 
+![SAM Structure](images/bam_structure.png) 
 
-To store millions of alignments, researchers also had to develop new, more practical formats. The [Sequence Alignment/Map (SAM) format](https://samtools.github.io/hts-specs/SAMv1.pdf) is a tabular text file format, where each line contains information for one alignment. SAM files are most often compressed as BAM (Binary SAM) files, to reduce space and allow direct access to alignments in any arbitrary region of the genome. Several tools
-only work with BAM files.
+SAM files are most often compressed as BAM (Binary SAM) files, to reduce space. These BAM files can then be indexed (do not confuse this indexing with the indexing of the reference genome) to allow direct access to alignments in any arbitrary region of the genome. Several tools only work with BAM files.
 
-TASK: Look at Anc_bwa_merged_select.sam and Anc_paired_ssaha2_select.sam. Also briefly look at SAMv1.pdf describing the format to understand the information in the sam files.
+**TASK** Let's transform the SAM file into an indexed BAM file. In the same terminal window where you indexed the genome, type 'samtools view -Sb SRR1030347.alignment.sam > SRR1030347.alignment.bam'. To create the index, the alignments in the bam file need to be sorted by position. Type 'samtools sort SRR1030347.alignment.bam SRR1030347.alignment.sorted' [TODO -> check samtools version!]. Finally, we can create the index 'samtools index SRR1030347.alignment.sorted.bam'. Notice now the appearance of a companion file SRR1030347.alignment.sorted.bam.bai that contains the index. This file should always accompany its corresponding bam file.
+
+**TASK** Let's do the whole process using galaxy. Upload the reference genome and the paired fastq files into Galaxy. Check their quality and perform any necessary filtering using trimmomatic or any of the tools we saw before. Next, perform an alignment with bwa mem of the paired reads (you need to select the option of paired reads) against the reference genome (choose one from history). Turn on the green light when you finished.
+
+#### Visualizing alignment results
 
 After generating alignments and obtaining a SAM/BAM file, how do I know this step went well? The same way as FastQC generates reports of fastq files to assess quality of raw data, there are programs that generate global reports on the quality of alignments. One popular tool for this is [qualimap](http://qualimap.bioinfo.cipf.es/).
 
+**TASK** In the terminal window, type 'qualimap bamqc -bam SRR1030347.alignment.sorted.bam'. Turn on the green light when finished.
 
-#### Alignment to a reference genome
+**TASK**: Open the reports example_HiSeqBGI.pdf and example_MiSeq.pdf and compare the sequence coverage graphs and insert size histograms.
+
+**NOTE**: The way you check if the alignment step went well depends on your application. Usually, duplication levels higher than 20% are not a good sign (they're a sign of low input DNA and PCR artifacts) but again, depends on what you are sequencing and how much. Similarly, in the case of bacterial sequencing or targeted (eg. exonic) sequencing you expect >95% successful alignment, but if sequencing a full mamallian genome (with many duplicated areas) it may be normal to have as low as 70-80% alignment success. If you have to check the expected “quality” for your application.
+
+You can also directly visualize the alignments using appropriate software such as [IGV](https://www.broadinstitute.org/igv/) or [Tablet](https://ics.hutton.ac.uk/tablet/). 
+
+**TASK** In the terminal window, type 'igv'. Wait some time, and the IGV browser should appear. First, load the reference genome used for the alignment (load genome NC_000913.3_MG1655.fasta as file). You should see a chromosome of ~4.5Mb appearing, which is the genome size of Escherichia coli. Next, load the file SRR1030347.alignment.sorted.bam. You should see a new track appearing in IGV. Next, type in the interval window on the top this position: 'NC_000913.3:3846244-3846290'. What can you see here? Next, type 'NC_000913.3:1-1000 and NC_000913.3:4640500-4641652'. You should see colors in the reads. What do you think is the meaning of those colors? Finally, look in 'NC_000913.3:3759212-3768438'. Turn on the green light when finished.
+
+**NOTE**: Most genomes (particularly mamallian genomes) contain areas of low complexity, composed mostly of repetitive sequences. In the case of short reads, sometimes these align to multiple regions in the genome equally well, making it impossible to know where the fragment came from. Longer reads are needed to overcome these difficulties, or in the absence of these, paired-end data can also be used. Some aligners (such as bwa) can use information on paired reads to help disambiguate some alignments. Information on paired reads is also added to the SAM file when proper aligners are used.
 
 
-TASK: Look at a few premade qualimap reports on real alignment datasets
-- Look at the sequence coverage graphs in: example_BGI_dup and example_BGI_Truseq
-- Look at insert sizes in: example_BGI_Truseq and example_MiSeq
-- Discuss duplication levels in: example_BGI_dup and HeLa_ChipSeq
-NOTE: The way you check if the alignment step went well depends on your application. Usually,
-duplication levels higher than 20% are not a good sign (they're a sign of low input DNA and PCR
-artifacts) but again, depends on what you are sequencing and how much. Similarly, in the case of
-bacterial sequencing or targeted (eg. exonic) sequencing you expect >95% successful alignment, but if
-sequencing a full mamallian genome (with many duplicated areas) it may be normal to have as low as
-70-80% alignment success. If you have to check the expected “quality” for your application.
-TASK: (optional) Just to see how to use qualimap, run Qualimap with example bam files:
-Anc_bwa_merged_select.bam; Anc_paired_ssaha2_select.bam; note that since these are very small
-files the generated reports will have little useful information.
+#### Detecting genetic variants
 
-Detecting genetic variants
-After aligning reads against a reference genome, you can now indicate where and how the individual(s)
-genetic sequence differs from the reference genome. To do this, there are specialized tools such as
-GATK13, freebayes and others that perform genotype attribution and detection of genetic variants from
-SAM/BAM alignment files.
-Single nucleotide polymorphisms (SNP) are the variants that are most easily and commonly reported.
-Other variants pose different challenges and some are particularly difficult, such as the detection of
-transposable element activity. Breseq14 is a software specialized in detecting several types of genomic
-events in short timescale evolutionary experiments in bacteria. It produces user-friendly variant reports,
-including the functional annotation of variants that have been detected. This means it can predict not
-only which variants there are and where they are, but also their potential effects (in which genes, if they
-fall in a coding region, etc...).
-TASK: Open an example output file from breseq (index.html). Look at different types of genetic
-variants and the different types of evidence that breseq uses to infer those variants.
-The current standard for reporting genetic variants is the variat call format (VCF15), which is a text
-based, where each line contains information about one putative variant detected by the software.
+After aligning reads against a reference genome, you can now see where and how the individual(s) genetic sequence differs from the reference genome. Using IGV, you have detected one mutation. To do this in a systematic way, there are specialized tools such as [GATK](https://www.broadinstitute.org/gatk/), [freebayes](https://github.com/ekg/freebayes) that perform genotype attribution and detection of genetic variants from SAM/BAM alignment files.
 
-TASK: Open an example vcf file.
-After inferring variants, functional annotation of variants is usually performed by specialized tools such
-as the Variant Effect Predictor (VEP16) that take into account information on the reference genome.
-13 https://www.broadinstitute.org/gatk/
-14 http://barricklab.org/twiki/bin/view/Lab/ToolsBacterialGenomeResequencing
-15 https://samtools.github.io/hts-specs/ VCF v4.2.pdf
-16 http://www.ensembl.org/info/docs/tools/vep/index.html
+**TASK** In the commandline, type 'freebayes -ref NC_000913.3_MG1655.fasta SRR1030347.alignment.sorted.bam > SRR1030347.alignment.vcf' TODOTODOTODO. Open the resulting vcf file using a text editor or using cat in the terminal. Turn on the green light when finished.
 
-Visualizing your results
-After finishing your analysis, even if you did all the quality checks, and obtained a list of variants, you
-may want to manually inspect your alignments (you should always manually inspect the regions that
-are most important for your analysis). For this, there is simple desktop software that you can use to
-visualize your data, such as IGV17 or Tablet18.
-TASK: Run IGV and look at sample BAM files with alignments
-First you'll need a reference genome:
-– Open genome file genome ecoli_NC012759.1_bw2952.fa
-Next open your alignment files:
-– Anc_bwa_merged_select.bam
-This file was aligned as single-end information, and accepting multiple mappings
-– Anc_paired_ssaha2_select.bam
-This file was aligned using paired-end data and ignoring multiple mappings
-Look at the following regions:
-– Mutation in the interval 784621-784665 in both datasets.
-– Region 1357840-1360767
-what do you think may happen when assembling an area like this?
-Inspect the pairing information (need to set option on IGV to look at it)
-NOTE: next to .bam files there is a .bai file with the same name. The .bai file is called the BAM index
-file and it is used to enable tools such as IGV to navigate the alignments much faster (imagine if you
-needed to go through millions of alignments every time you moved around in the genome).
-NOTE: Most genomes (particularly mamallian genomes) contain areas of low complexity, composed
-mostly of repetitive sequences. In the case of short reads, sometimes these align to multiple regions in
-the genome equally well, making it impossible to know where the fragment came from. Longer reads
-are needed to overcome these difficulties, or in the absence of these, paired-end data can also be used.
-Some aligners (such as bwa) can use information on paired reads to help disambiguate some
-alignments. Information on paired reads is also added to the SAM file when proper aligners are used.
+The current standard for reporting genetic variants is the variat call format ([VCF](https://samtools.github.io/hts-specs/VCFv4.2.pdf)), which is a tabular text based format, where each line contains information about one putative variant detected by the software. After inferring variants, functional annotation of variants is usually performed by specialized tools such as the Variant Effect Predictor ([VEP](http://www.ensembl.org/info/docs/tools/vep/index.html)) that take into account information on the reference genome.
 
-17 https://www.broadinstitute.org/igv/
-18 https://ics.hutton.ac.uk/tablet/
+Single nucleotide polymorphisms (SNP) are the variants that are most easily and commonly reported. Other variants pose different challenges and some are particularly difficult, such as the detection of transposable element activity. [Breseq](http://barricklab.org/twiki/bin/view/Lab/ToolsBacterialGenomeResequencing) is a software specialized in detecting several types of genomic events in short timescale evolutionary experiments in bacteria, including transposable elements. It produces user-friendly variant reports, including the functional annotation of variants that have been detected. This means it can predict not only which variants there are and where they are, but also their potential effects (in which genes, if they fall in a coding region, etc...).
 
-- Applications: Genomics – denovo genome assembly and annotation
-Another very common application of NGS, particularly for bacteria and virus without an assembled
-genome, is to obtain its complete genome from the assembly of million of short reads. This poses
-significant computational challenges and novel methods had to be devised to deal with the complexity.
-The most popular tools use de-bruijn graphs19 to assemble these millions of reads. Although it is
-becoming much more feasible, assembly is still a very computer intensive process that needs to be run
-in powerful servers for most cases (particularly in longer and repeat-rich eukaryote genomes). Spades20
-(mostly for bacteria) and sga21 (for longer eukaryote genomes) are examples of popular assemblers.
-TASK: Discuss the following: given that you know that most genomes contain repetitive sequences, do
-you think you can usually obtain a complete genome with a single NGS experiment sequencing only
-short reads (even for bacteria)? Why, and what possible solutions do you envision to solve the
-problem? Do you think only sequencing more short reads can solve the issue?
-When doing de novo genome assembly, we need to scaffold millions of pieces together. This process
-depends non-linearly on many factors. To assess how well the genome assembly process went, you
-usually want your assembled genome to be in as few pieces as possible, and that each piece is as large
-as possible. The usual N50, which is the size of the smallest contig that we need to include to have at
-least 50% of the assembled sequence (the higher the N50, the less fragmented is our assembly).
-Nontheless, this is not (and should not) be the only measure used to assess the quality of the genome.
-Quast22 is an example of a software that produces several measures to assess genome assemblies.
+**TASK**: Open an example output file from breseq (index.html). Identify SNPs, deletions and movements of transposable elements. What type of evidence is required to safely detect such mutations? Turn on the green light when you're finished.
+
+### Genomics - denovo genome assembly and annotation
+
+Another very common application of NGS, particularly for bacteria and virus without an assembled genome, is to obtain its complete genome from the assembly of million of short reads. This poses significant computational challenges and novel methods had to be devised to deal with the complexity. The most popular tools use [de-bruijn graphs](https://en.wikipedia.org/wiki/De_Bruijn_graph) to assemble these millions of reads. Although it is becoming much more feasible, assembly is still a very computer intensive process that needs to be run in powerful servers for most cases (particularly in longer and repeat-rich eukaryote genomes). [Spades](http://bioinf.spbau.ru/spades) (mostly for bacteria) and [sga](https://github.com/jts/sga/wiki) (for longer eukaryote genomes) are examples of popular assemblers.
+
+**TASK**: Discuss the following: given that you know that most genomes contain repetitive sequences, do you think you can usually obtain a complete genome with a single NGS experiment sequencing only short reads (even for bacteria)? Do you think only sequencing more short reads can solve the issue?
+
+
+When doing de novo genome assembly, we need to scaffold millions of pieces together. This process depends non-linearly on many factors. To assess how well the genome assembly process went, you usually want your assembled genome to be in as few pieces as possible, and that each piece is as large as possible. The usual N50, which is the size of the smallest contig that we need to include to have at least 50% of the assembled sequence (the higher the N50, the less fragmented is our assembly).
+
+Nonetheless, this is not (and should not) be the only measure used to assess the quality of the genome. [Quast](http://bioinf.spbau.ru/quast) is an example of a software that produces several measures to assess genome assemblies.
+
 TASK: Open the file report.html inside quast_results (or the pdf). Compare:
 - clean VS dirty
 - impact of read length
 - single-end vs paired-end
 - impact of coverage
-Genome annotation
-The genome assembly process generates a sequence of nucleotides. Now we need to annotate the
-genome, namely to know where genes are and what are their possible functions. In bacteria, this is
-reasonably feasible, and there are already programs that allow a reasonably good quality annotation,
-such as prokka23. In eukaryotes this process is much harder and requires multiple steps of validation.
-TASK: Open and browse an example bacterial assembly with IGV: load the reference genome
-example_assembly.fasta and open the genome annotation example_assembly.prokka.gff. Open the
-following files with a text editor: example_assembly.prokka.fasta and example_assembly.prokka.gbk.
 
-19 https://en.wikipedia.org/wiki/De_Bruijn_graph
-20 http://bioinf.spbau.ru/spades
-21 https://github.com/jts/sga/wiki
-22 http://bioinf.spbau.ru/quast
-23 https://github.com/tseemann/prokka
+The genome assembly process generates a sequence of nucleotides. Now we need to annotate the genome, namely to know where genes are and what are their possible functions. In bacteria, this is reasonably feasible, and there are already programs that allow a reasonably good quality annotation, such as [prokka](https://github.com/tseemann/prokka). In eukaryotes this process is much harder and requires multiple steps of validation.
 
-## MetaGenomics 
+TASK: Open and browse an example bacterial assembly with IGV: load the reference genome example_assembly.fasta and open the genome annotation example_assembly.prokka.gff. Open the following files with a text editor: example_assembly.prokka.fasta and example_assembly.prokka.gbk.
+
+
+
+### MetaGenomics 
 
 TODO...
 
@@ -275,12 +217,10 @@ Beta diversity
 Group Significance
 
 
-## Transcriptomics
-Another very common application of NGS is to sample the transcriptome, much like gene expression
-microarrays. The main advantages of RNA Sequencing versus microarrays is a better signal-to-noise
-ratio and the ability to detect novel transcripts (something impossible with microarrays).
-The data processing is similar to genomic resequencing. For eukaryotes, mRNA is usually spliced, and
-thus we need to use splice-aware aligners (eg. Tophat24) to map short reads to a reference genome.
+### Transcriptomics
+
+Another very common application of NGS is to sample the transcriptome, much like gene expression microarrays. The main advantages of RNA Sequencing versus microarrays is a better signal-to-noise ratio and the ability to detect novel transcripts (something impossible with microarrays). The data processing is similar to genomic resequencing. For eukaryotes, mRNA is usually spliced, and thus we need to use splice-aware aligners (eg. Tophat24) to map short reads to a reference genome.
+
 TASK: Look at a RNA-Seq sample in IGV:
 - In IGV, load the Drosophila genome as reference; load gtf file annotation and alignment files (*.bam)
 - Look at position: 3L:15033260-15038204 (may need to change scale)
@@ -288,6 +228,7 @@ TASK: Look at a RNA-Seq sample in IGV:
 - Look at position X:5793758-5799858 (compare coverage with previous examples)
 Notice the 3' bias, particularly in one of the replicates
 Would you be able to detect all of what you saw here using microarrays?
+
 NOTE: Similarly to microarrays, RNA-Seq can be used to detect differential expression. Nonetheless,
 RNA sequencing suffer from multiple still poorly understood biases, and the methods to deal with them
 are not as mature as the methods handling microarrays. Moreover, to obtain better signal-to-noise you
@@ -297,36 +238,24 @@ Usually, to perform differential expression analysis, one needs to count how man
 transcript/gene is read. A popular tool to generate these counts from a SAM/BAM file is htseq-count25.
 TASK: Open example_RNA_counts.htseq.tab in the text editor or in a spreadsheet
 How would you about checking which genes are differential expressed?
-From these count files several methods can be then used to perform statistical tests. Given that
-sequencing data is based on discrete counts, most of the popular methods are based on derivations of
-the binomial distribution. Similarly to microarrays, there are many available tools to perform these
-analysis using the R language (such as edger and DESeq).
-TASK: Open example_RNA_counts.edger_analysis.tab and Dmelano_rnaseq.bayseq_diff.txt with a
-text editor or in a spreadsheet. How would you go about selecting genes of interest? What would you
-do with this list? Is statistically significant the same as biologically significant?
-NOTE: Several experiments can have different numbers of reads sequenced (for the same amount of
-RNA). Moreover, gene length also influences the number of counts. One common normalization is to
-transform counts into FPKM (fragments per kb per million aligned reads). Nonetheless this measure
-needs to be used with caution, particularly when comparing different loci.
+
+From these count files several methods can be then used to perform statistical tests. Given that sequencing data is based on discrete counts, most of the popular methods are based on derivations of the binomial distribution. Similarly to microarrays, there are many available tools to perform these analysis using the R language (such as edger and DESeq).
+
+TASK: Open example_RNA_counts.edger_analysis.tab and Dmelano_rnaseq.bayseq_diff.txt with a text editor or in a spreadsheet. How would you go about selecting genes of interest? What would you do with this list? Is statistically significant the same as biologically significant?
+
+NOTE: Several experiments can have different numbers of reads sequenced (for the same amount of RNA). Moreover, gene length also influences the number of counts. One common normalization is to transform counts into FPKM (fragments per kb per million aligned reads). Nonetheless this measure needs to be used with caution, particularly when comparing different loci.
+
 24 https://ccb.jhu.edu/software/tophat/index.shtml
 25 http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html
 
-- Applications: Epigenomics
-NGS can also be used to sequence specific regions of interest in the genome. An example of this are
-regions bound by transcription factors (TF). Using antibodies specific for a TF, the bound DNA can be
-selectively extracted and sequenced. In this case, we are interested in knowing which areas of the
-genome are enriched in sequenced reads (loci bound by the TF). This technique is called ChIP-Seq
-(chromatin IP followed by sequencing).
-TASK: Discuss the steps required to analyse the data after you get the sequencing reads. Discuss how
-would you see if your ChIP experiment worked or not.
-TASK: Look at some data from (Myers et al., 2013):
-- Open the genome for MG1655, the annotation and datasets into IGV
-Look at the following positions (examples from the paper)
-- dmsA: gi|49175990|ref|NC_000913.2|:938,182-944,626
-- ndH: gi|49175990|ref|NC_000913.2|:1,163,308-1,168,612
-Most often the term epigenetics is associated to DNA methylation. One popular technique to assess
-methylation is bisulfite sequencing, where DNA is treated to convert unmethylated cytosines to uracil.
-Comparing the sequenced reads after the treatment with the reference genome, we can have an estimate
-of the percentage of methylation in those bases.
-TASK: Look at an example of RRBS ENCODE_example_BSSeq.bed
-The last two columns tell you the coverage and %methylated
+### Epigenomics
+
+NGS can also be used to sequence specific regions of interest in the genome. An example of this are regions bound by transcription factors (TF). Using antibodies specific for a TF, the bound DNA can be selectively extracted and sequenced. In this case, we are interested in knowing which areas of the genome are enriched in sequenced reads (loci bound by the TF). This technique is called ChIP-Seq (chromatin IP followed by sequencing).
+
+**TASK**: Look at some data from (Myers et al., 2013): Open IGV, load as genome the file 'ecoli_NC_000913.2_MG1655.fa' in the epigenomics folder. Next, load the annotation file 'NC_000913.2_MG1655.gff', all the '*.bw' files (bigwig files are summary views of the alignments, representing average coverage along fixed-length intervals) and the 'MG1655_FNR_A_VS_INPUT_A_peaks.bed' file. Look at the following positions (examples from the paper): dmsA (gi|49175990|ref|NC_000913.2|:938,182-944,626) and ndH: (gi|49175990|ref|NC_000913.2|:1,163,308-1,168,612). To interpret the results, you need to know that 'FNR_IP' represents the DNA that comes with FNR antibody, 'INPUT' is what you obtain without antibody (note: why do you need this?). The 'peaks.bed' file contain regions of the genome enriched in DNA from the FNR antibody. Try to see if there is a correlation of the previous information with the WT RNA-Seq and the FNR mutant RNA-Seq. Turn the green light when you're finished.
+
+Most often the term epigenetics is associated to DNA methylation. One popular technique to assess methylation is reduced representation bisulfite sequencing (RRBS), where GC-rich DNA is obtained and subjected to bisulfite treatment that converts unmethylated cytosines to uracil. After aligning the reads sequenced  after bisulfite treatment with the reference genome, we can have an estimate of the percentage of methylation in those bases.
+
+**TASK**: Look at an example of RRBS 'ENCODE_example_BSSeq.bed' (open with a text editor, or use cat in the terminal). The last two columns tell you the coverage and percentage of methylated bases relative to total bases sequenced at that position.
+
+
