@@ -86,7 +86,6 @@ Other plots indicate biases in nucleotidic content of reads, either globally (as
 
 **Task**: In a terminal window, go to the folder fastq_examples. Type 'fastqc *.fastq.gz' and press enter. What did you obtain? Inspect all files and compare the different technologies. Illumina machines generate shorter reads, usually all with the same length. Pacbio and nanopore generate (much) longer reads, with diverse read lengths, and of a poorer quality. Illumina generates many more reads, making both technologies complementary to each other (this will become clearer when we look at specific applications). Finally, you can also notice that, independently of the technology, the quality of base quality tends to decrease along the length of the read.
 
-
 ### Filtering and Trimming
 
 As you may have noticed before, reads tend to lose quality towards their end, where there is a higher probability of erroneous bases being called. To avoid problems in subsequent analysis, you should remove bases with higher probability of error, usually by trimming poor quality bases from the end.
@@ -181,45 +180,22 @@ Another very common application of NGS, particularly for bacteria and virus with
 
 **TASK**: Discuss the following: given that you know that most genomes contain repetitive sequences, do you think you can usually obtain a complete genome with a single NGS experiment sequencing only short reads (even for bacteria)? Do you think only sequencing more short reads can solve the issue?
 
+**TASK**: In the terminal, type 'spades ....' TODOTODOTODO.
 
 When doing de novo genome assembly, we need to scaffold millions of pieces together. This process depends non-linearly on many factors. To assess how well the genome assembly process went, you usually want your assembled genome to be in as few pieces as possible, and that each piece is as large as possible. The usual N50, which is the size of the smallest contig that we need to include to have at least 50% of the assembled sequence (the higher the N50, the less fragmented is our assembly).
 
 Nonetheless, this is not (and should not) be the only measure used to assess the quality of the genome. [Quast](http://bioinf.spbau.ru/quast) is an example of a software that produces several measures to assess genome assemblies.
 
-TASK: Open the file report.html inside quast_results (or the pdf). Compare:
-- clean VS dirty
-- impact of read length
-- single-end vs paired-end
-- impact of coverage
+**TASK**: Open the file report.html inside the folder quast_results. You can see differente measures comparing assemblies made with different datasets. What are the factors influencing genome assembly? In which way they influence assembly? What is the best assembly? Why? Turn on the green light when finished.
 
 The genome assembly process generates a sequence of nucleotides. Now we need to annotate the genome, namely to know where genes are and what are their possible functions. In bacteria, this is reasonably feasible, and there are already programs that allow a reasonably good quality annotation, such as [prokka](https://github.com/tseemann/prokka). In eukaryotes this process is much harder and requires multiple steps of validation.
 
-TASK: Open and browse an example bacterial assembly with IGV: load the reference genome example_assembly.fasta and open the genome annotation example_assembly.prokka.gff. Open the following files with a text editor: example_assembly.prokka.fasta and example_assembly.prokka.gbk.
-
-
-
-### MetaGenomics 
-
-TODO...
-
-In MetaGenomics, we don't sequence a single individual or clone, but a community of individuals of different species, usually with the goal of identifying the species that are present, and what are their relative abundances.  
-
-In this tutorial you will learn how to perform a 16S Microbial Analysis using the QIIME toolsuite in Galaxy. It was based on already existing tutorials about QIIME, more precisely this one, but it was adapted to the Galaxy interface.
-
-We will work with Illumina sequencing data that is from the Adaptive immunity increases the pace and predictability of evolutionary change study in commensal gut bacteria but that has been shortened to make this tutorial quicker to execute. We'll use the Greengenes reference OTUs, which is the default reference database used by QIIME. You may need to download and upload the reference database to your galaxy.
-
-In the study mentioned before, it was performed high-throughput 16S rRNA gene sequencing of DNA extracted from faecal samples from two timepoints of the evolution experiment (day 0 and day 3) of wild-type mice. Also the mice from day 3 of experiment were treated with Streptomycin and were subsequently colonized with Escherichia coli.
-
-**TASK**: Unzip the file QIIME_core_diversity_report.zip. TODO TODO....
-Taxa Summaries
-Alpha diversity
-Beta diversity
-Group Significance
+**TASK**: Open and browse an example assembly with IGV: load the reference genome 'example_assembly.fasta' and open the genome annotation 'example_assembly.prokka.gff'. How many genes where detected by prokka? Open the following files with a text editor: example_assembly.prokka.fasta and example_assembly.prokka.gbk. Turn on the green light when finished.
 
 
 ### Transcriptomics
 
-Another very common application of NGS is to sample the transcriptome, much like gene expression microarrays. The main advantages of RNA Sequencing versus microarrays is a better signal-to-noise ratio and the ability to detect novel transcripts (something impossible with microarrays). The data processing is similar to genomic resequencing. For eukaryotes, mRNA is usually spliced, and thus we need to use splice-aware aligners (eg. Tophat24) to map short reads to a reference genome.
+Another very common application of NGS is to sample the transcriptome, much like gene expression microarrays. The main advantages of RNA Sequencing versus microarrays is a better signal-to-noise ratio and the ability to detect novel transcripts (something impossible with microarrays). Data processing is similar to genomic resequencing. For eukaryotes, mRNA is usually spliced, and thus we need to use splice-aware aligners (eg. [Tophat](https://ccb.jhu.edu/software/tophat/index.shtml)) to map short reads to a reference genome.
 
 TASK: Look at a RNA-Seq sample in IGV:
 - In IGV, load the Drosophila genome as reference; load gtf file annotation and alignment files (*.bam)
@@ -229,15 +205,10 @@ TASK: Look at a RNA-Seq sample in IGV:
 Notice the 3' bias, particularly in one of the replicates
 Would you be able to detect all of what you saw here using microarrays?
 
-NOTE: Similarly to microarrays, RNA-Seq can be used to detect differential expression. Nonetheless,
-RNA sequencing suffer from multiple still poorly understood biases, and the methods to deal with them
-are not as mature as the methods handling microarrays. Moreover, to obtain better signal-to-noise you
-need more sequencing which makes it more expensive. Thus, for “simple” experiments, in organisms
-with good quality microarrays available, these may still be more cost-effective and easier to use.
-Usually, to perform differential expression analysis, one needs to count how many times a different
-transcript/gene is read. A popular tool to generate these counts from a SAM/BAM file is htseq-count25.
-TASK: Open example_RNA_counts.htseq.tab in the text editor or in a spreadsheet
-How would you about checking which genes are differential expressed?
+NOTE: Similarly to microarrays, RNA-Seq can be used to detect differential expression. Nonetheless, RNA sequencing suffer from multiple still poorly understood biases, and the methods to deal with them are not as mature as the methods handling microarrays. Moreover, to obtain better signal-to-noise you need more sequencing which makes it more expensive. Thus, for “simple” experiments, in organisms with good quality microarrays available, these may still be more cost-effective and easier to use. Usually, to perform differential expression analysis, one needs to count how many times a different transcript/gene is read. A popular tool to generate these counts from a SAM/BAM file is [htseq-count](http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html).
+
+
+TASK: Open example_RNA_counts.htseq.tab in the text editor or in a spreadsheet How would you about checking which genes are differential expressed?
 
 From these count files several methods can be then used to perform statistical tests. Given that sequencing data is based on discrete counts, most of the popular methods are based on derivations of the binomial distribution. Similarly to microarrays, there are many available tools to perform these analysis using the R language (such as edger and DESeq).
 
@@ -245,8 +216,25 @@ TASK: Open example_RNA_counts.edger_analysis.tab and Dmelano_rnaseq.bayseq_diff.
 
 NOTE: Several experiments can have different numbers of reads sequenced (for the same amount of RNA). Moreover, gene length also influences the number of counts. One common normalization is to transform counts into FPKM (fragments per kb per million aligned reads). Nonetheless this measure needs to be used with caution, particularly when comparing different loci.
 
-24 https://ccb.jhu.edu/software/tophat/index.shtml
-25 http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html
+### MetaGenomics 
+
+In MetaGenomics, we don't sequence a single individual or clone, but a community of individuals of different species, usually with the goal of identifying the species that are present, and what are their relative abundances. As you can imagine, sequencing many genomes simultaneously (each of them present at different frequencies) is a very complex task, and techniques to do it efficiently are still an area of active research. 
+
+Another simpler approach to do this is to sequence a single common locus with sufficient variability to allow distinguishing as many species as possible. 16S is a locus commonly used to sample bacterial communities. In this case, we don't need to assemble the reads, but to compare them against a reference database of 16S genes of known species. This is what software such as [Qiime](http://qiime.org/) and [mothur](https://www.mothur.org/) do. 
+
+Since there are potentially many species not yet sequenced (particularly since most bacteria are unculturable), one may lose a lot of information if only trying to match a reference database. These programs also give the possibility of clustering some (or all) of the input sequences into Operational Taxonomical Units (OTU), which roughly translate into different species (usually an OTU is defined by sequences with more than 97% similarity), thereby avoiding the possible gaps in the reference databases.
+
+
+**TASK**: Unzip the file QIIME_core_diversity_report.zip. This contains the result of applying qiime into a dataset derived from [Batista et al. (2015)]. This data contais high-throughput 16S rRNA gene sequencing data of DNA extracted from faecal samples from two timepoints of a bacterial evolution experiment (day 0 and day 3) of wild-type mice where the mice from day 3 of experiment were treated with Streptomycin and subsequently colonized with Escherichia coli. 
+
+
+**TASK**: Look into....
+
+TODO TODO....
+Taxa Summaries
+Alpha diversity
+Beta diversity
+Group Significance
 
 ### Epigenomics
 
