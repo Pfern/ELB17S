@@ -192,29 +192,27 @@ The genome assembly process generates a sequence of nucleotides. Now we need to 
 
 **TASK**: Open and browse an example assembly with IGV: load the reference genome 'example_assembly.fasta' and open the genome annotation 'example_assembly.prokka.gff'. How many genes where detected by prokka? Open the following files with a text editor: example_assembly.prokka.fasta and example_assembly.prokka.gbk. Turn on the green light when finished.
 
-
 ### Transcriptomics
 
-Another very common application of NGS is to sample the transcriptome, much like gene expression microarrays. The main advantages of RNA Sequencing versus microarrays is a better signal-to-noise ratio and the ability to detect novel transcripts (something impossible with microarrays). Data processing is similar to genomic resequencing. For eukaryotes, mRNA is usually spliced, and thus we need to use splice-aware aligners (eg. [Tophat](https://ccb.jhu.edu/software/tophat/index.shtml)) to map short reads to a reference genome.
+Another very common application of NGS is to sample the transcriptome, much like gene expression microarrays. The main advantages of RNA Sequencing versus microarrays is a better signal-to-noise ratio and the ability to detect novel transcripts (something impossible with microarrays). Data processing is similar to genomic resequencing. For eukaryotes, mRNA is usually spliced, and thus we need to use splice-aware aligners such as [Tophat](https://ccb.jhu.edu/software/tophat/index.shtml) and its successor [Hisat](http://ccb.jhu.edu/software/hisat2/index.shtml) to map short transcriptomic reads to a reference genome. These aligners are based on the burrows-wheeler aligners we discussed previously, but with extensions to deal with the possibility of spliced reads.
 
-TASK: Look at a RNA-Seq sample in IGV:
-- In IGV, load the Drosophila genome as reference; load gtf file annotation and alignment files (*.bam)
-- Look at position: 3L:15033260-15038204 (may need to change scale)
-- Look at position: X:20564838-20570348 (may need to change scale to 800 to see)
-- Look at position X:5793758-5799858 (compare coverage with previous examples)
-Notice the 3' bias, particularly in one of the replicates
-Would you be able to detect all of what you saw here using microarrays?
+**TASK** Get the files from [here](https://github.com/dsobral/ADER17S/tree/master/material/guilgur). This contains data extracted from [Guilgur et al, 2014](https://elifesciences.org/content/3/e02181). In this Drosophila melanogaster dataset, we have two conditions (WT and mut), with two replicates for each (note that nowadays, it is more common to use 3 or more replicates). To make it quick to run, we have extracted data for a very limited set of genes. Next, obtain genomic fasta for Drosophila melanogaster from the Ensembl website: click on the Downloads tab on the top, then on Download data via FTP, finally search for Drosophila melanogaster and click on the fasta link for DNA data. Get the toplevel, non-masked compressed fasta file. Decompress the file. 
 
-NOTE: Similarly to microarrays, RNA-Seq can be used to detect differential expression. Nonetheless, RNA sequencing suffer from multiple still poorly understood biases, and the methods to deal with them are not as mature as the methods handling microarrays. Moreover, to obtain better signal-to-noise you need more sequencing which makes it more expensive. Thus, for “simple” experiments, in organisms with good quality microarrays available, these may still be more cost-effective and easier to use. Usually, to perform differential expression analysis, one needs to count how many times a different transcript/gene is read. A popular tool to generate these counts from a SAM/BAM file is [htseq-count](http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html).
+**TASK**: Upload all the files into Galaxy. Align the reads against the Drosophila genome using Hisat2 in Galaxy. Use the inbuilt genome to avoid the index step. Optionally, you can also align using the genome you downloaded to see the difference in time it takes. Finally, download all the BAM files (don't forget to download all the companion index bai files also).
 
+**TASK**: In IGV, load as genome the Drosophila melanogaster fasta you downloaded previously. Also load the provided sample gtf file. Finally, load the BAM files for all the RNA samples. In IGV, look at position: 3L:15041314-15044195 (alternatively, look for the gene Rpn12R, or Fbgn0036465). What can you see? Next, look at position: X:20689286-20698941 (gene run, or FBgn0003300). What can you see? Finally, look at position: X:5898729-5908384 (gene Act5c, or FBgn0000042). What can you see (notice, in particular, the gene converage)? Turn on the green light when finished.
 
-TASK: Open example_RNA_counts.htseq.tab in the text editor or in a spreadsheet How would you about checking which genes are differential expressed?
+**Question**: Would you be able to detect all of what you saw here using microarrays? If not, what and why?
 
-From these count files several methods can be then used to perform statistical tests. Given that sequencing data is based on discrete counts, most of the popular methods are based on derivations of the binomial distribution. Similarly to microarrays, there are many available tools to perform these analysis using the R language (such as edger and DESeq).
+To perform differential expression analysis, one needs to count how many times a different transcript/gene is read. Popular tools to generate these counts from a SAM/BAM file include [htseq-count](http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html) and [featurecounts](http://bioinf.wehi.edu.au/featureCounts/).
 
-TASK: Open example_RNA_counts.edger_analysis.tab and Dmelano_rnaseq.bayseq_diff.txt with a text editor or in a spreadsheet. How would you go about selecting genes of interest? What would you do with this list? Is statistically significant the same as biologically significant?
+**TASK**: In Galaxy, use htseq-counts to generate tables of counts for each sample. Use the generated BAM files, and the provided sample gtf file. Put stranded as no, and leave the rest as the default. Turn on the green light when finished.
 
-NOTE: Several experiments can have different numbers of reads sequenced (for the same amount of RNA). Moreover, gene length also influences the number of counts. One common normalization is to transform counts into FPKM (fragments per kb per million aligned reads). Nonetheless this measure needs to be used with caution, particularly when comparing different loci.
+From these count files several methods can be then used to perform statistical tests. Given that sequencing data is based on discrete counts, most of the popular methods are based on derivations of the binomial distribution. Similarly to microarrays, there are many available tools to perform these analysis using the [R language](https://www.r-project.org/about.html) (such as [edger](https://bioconductor.org/packages/release/bioc/html/edgeR.html) and [DESeq](http://bioconductor.org/packages/release/bioc/html/DESeq.html)).
+
+**TASK**: Use DESeq2 in Galaxy to calculate differential gene expression. As factor use "Genotype", as factor level 1 use "mut", and as count files the 2 mut count tables generated before. As factor level 2 use WT and as count files the 2 WT count tables. Leave the rest as default and execute. Turn on the green light when finished.
+
+**NOTE**: Several experiments can have different numbers of reads sequenced (for the same amount of RNA). Moreover, gene length also influences the number of counts. One common normalization is to transform counts into FPKM (fragments per kb per million aligned reads). Nonetheless this measure needs to be used with caution, particularly when comparing different loci.
 
 ### MetaGenomics 
 
@@ -224,26 +222,18 @@ Another simpler approach to do this is to sequence a single common locus with su
 
 Since there are potentially many species not yet sequenced (particularly since most bacteria are unculturable), one may lose a lot of information if only trying to match a reference database. These programs also give the possibility of clustering some (or all) of the input sequences into Operational Taxonomical Units (OTU), which roughly translate into different species (usually an OTU is defined by sequences with more than 97% similarity), thereby avoiding the possible gaps in the reference databases.
 
+**TASK**: Unzip the file QIIME_core_diversity_report.zip. This contains the result of applying qiime into a dataset derived from [Batista et al. (2015)]. This data contais high-throughput 16S rRNA gene sequencing data of DNA extracted from faecal samples from two timepoints of a bacterial evolution experiment (day 0 and day 3) of wild-type mice where the mice from day 3 of experiment were treated with Streptomycin and subsequently colonized with Escherichia coli. Open the html file insie the folder you just extracted. If you click on the bar charts, you will see the species present in each sample and their relative frequency. What is the major difference between the untreated samples and the ones subjected to streptomycin? Turn on the green light when you're finished.
 
-**TASK**: Unzip the file QIIME_core_diversity_report.zip. This contains the result of applying qiime into a dataset derived from [Batista et al. (2015)]. This data contais high-throughput 16S rRNA gene sequencing data of DNA extracted from faecal samples from two timepoints of a bacterial evolution experiment (day 0 and day 3) of wild-type mice where the mice from day 3 of experiment were treated with Streptomycin and subsequently colonized with Escherichia coli. 
+**TASK**: The alpha diversity measures species diversity within one sample or group of samples. Select the Alpha rarefaction plots, and see different metrics related to Antibiotic Usage. Also open the Alpha Diversity Boxplots. How do you interpret what do you see? Turn on the green light when you're finished.
 
-
-**TASK**: Look into....
-
-TODO TODO....
-Taxa Summaries
-Alpha diversity
-Beta diversity
-Group Significance
+**TASK**: The beta diversity measures a distance in diversity between samples or group of samples (how different are the communities). One way of visualizing those distances is through Principal Components plots. Press on the PCoA plot (unweighted Unifrac). Do you see clusters of samples forming? Group significance tests which OTUs are significantly present in a group versus another (much like RNA-Seq differential gene expression). Which groups of OTUs are differentially present in untreated versus streptomycin treated? Does it agree with what you saw before? Turn on the green light when you're finished.
 
 ### Epigenomics
 
 NGS can also be used to sequence specific regions of interest in the genome. An example of this are regions bound by transcription factors (TF). Using antibodies specific for a TF, the bound DNA can be selectively extracted and sequenced. In this case, we are interested in knowing which areas of the genome are enriched in sequenced reads (loci bound by the TF). This technique is called ChIP-Seq (chromatin IP followed by sequencing).
 
-**TASK**: Look at some data from (Myers et al., 2013): Open IGV, load as genome the file 'ecoli_NC_000913.2_MG1655.fa' in the epigenomics folder. Next, load the annotation file 'NC_000913.2_MG1655.gff', all the '*.bw' files (bigwig files are summary views of the alignments, representing average coverage along fixed-length intervals) and the 'MG1655_FNR_A_VS_INPUT_A_peaks.bed' file. Look at the following positions (examples from the paper): dmsA (gi|49175990|ref|NC_000913.2|:938,182-944,626) and ndH: (gi|49175990|ref|NC_000913.2|:1,163,308-1,168,612). To interpret the results, you need to know that 'FNR_IP' represents the DNA that comes with FNR antibody, 'INPUT' is what you obtain without antibody (note: why do you need this?). The 'peaks.bed' file contain regions of the genome enriched in DNA from the FNR antibody. Try to see if there is a correlation of the previous information with the WT RNA-Seq and the FNR mutant RNA-Seq. Turn the green light when you're finished.
+**TASK**: Look at some data from (Myers et al., 2013): Open IGV, load as genome the file 'ecoli_NC_000913.2_MG1655.fa' in the epigenomics folder. Next, load the annotation file 'NC_000913.2_MG1655.gff', all the '*.bw' files (bigwig files are summary views of the alignments, representing average coverage along fixed-length intervals) and the 'MG1655_FNR_A_VS_INPUT_A_peaks.bed' file. Look at the following positions (examples from the paper): dmsA (gi|49175990|ref|NC_000913.2|:938,182-944,626) and ndH: (gi|49175990|ref|NC_000913.2|:1,163,308-1,168,612). To interpret the results, you need to know that 'FNR_IP' represents the DNA that comes with FNR antibody, 'INPUT' is what you obtain without antibody (note: why do you need this?). The 'peaks.bed' file contain regions of the genome enriched in DNA from the FNR antibody. Try to see if there is a correlation of the previous information with the WT RNA-Seq and the FNR mutant RNA-Seq. Turn on the green light when you're finished.
 
 Most often the term epigenetics is associated to DNA methylation. One popular technique to assess methylation is reduced representation bisulfite sequencing (RRBS), where GC-rich DNA is obtained and subjected to bisulfite treatment that converts unmethylated cytosines to uracil. After aligning the reads sequenced  after bisulfite treatment with the reference genome, we can have an estimate of the percentage of methylation in those bases.
 
 **TASK**: Look at an example of RRBS 'ENCODE_example_BSSeq.bed' (open with a text editor, or use cat in the terminal). The last two columns tell you the coverage and percentage of methylated bases relative to total bases sequenced at that position.
-
-
